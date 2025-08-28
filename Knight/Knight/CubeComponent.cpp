@@ -14,9 +14,9 @@ CubeComponent::~CubeComponent()
 {
 }
 
-void CubeComponent::Update(float ElapsedSeconds)
+void CubeComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
-	__super::Update(ElapsedSeconds);
+	__super::Update(ElapsedSeconds, pRH);
 	if (_Size.x != Size.x || _Size.y != Size.y || _Size.z != Size.z)
 	{
 		_Size = Size;

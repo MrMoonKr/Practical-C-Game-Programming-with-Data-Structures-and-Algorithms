@@ -116,6 +116,12 @@ Component* SceneObject::RemoveComponent(Component::eComponentType ComponentType,
 	return component;
 }
 
+/// <summary>
+/// Update - called once per frame, updates all components and child SceneObjects
+/// </summary>
+/// <param name="ElapsedSeconds">seconds since last call</param>
+/// <returns>true if the SceneObject is active, false if it's disabled</returns>
+/// <remarks>if the SceneObject is not active, its components and children will not be updated</remarks>
 bool SceneObject::Update(float ElapsedSeconds)
 {
 	if (IsActive)

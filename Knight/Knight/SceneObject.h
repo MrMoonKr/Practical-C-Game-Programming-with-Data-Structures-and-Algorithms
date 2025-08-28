@@ -21,7 +21,6 @@ public:
 	void SetParent(SceneObject* parent);
 	bool IsActive;
 
-
 	template<class T>
 	T* GetComponent()
 	{

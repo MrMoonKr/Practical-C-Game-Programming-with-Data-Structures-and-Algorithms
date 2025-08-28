@@ -57,6 +57,12 @@ public:
 
 	static Knight* Instance;
 
+	Scene* _Scene;
+
+	float _FrameUpdateTime = 0.0f;
+	float _FrameRenderTime = 0.0f;
+	float _OffscreenRenderTime = 0.0f;
+
 protected:
 	virtual void Update(float ElapsedSeconds);
 	virtual void DrawOffscreen();
@@ -67,7 +73,6 @@ protected:
 
 
 protected:
-	Scene* _Scene;
 	Font _Font;
 	bool _shouldExitGameLoop;
 

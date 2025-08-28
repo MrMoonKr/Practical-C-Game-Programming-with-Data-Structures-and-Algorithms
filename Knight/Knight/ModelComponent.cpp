@@ -18,9 +18,9 @@ ModelComponent::ModelComponent()
 	, _Texture2DMaps()
 	, _Color(WHITE)
 	, _LoadState(0)
-	, _BoundingBox()
 {
 	Type = Component::eComponentType::Model3D;
+	_MeshBoundingBoxes.clear();
 }
 
 ModelComponent::~ModelComponent()
@@ -73,9 +73,9 @@ ModelComponent::~ModelComponent()
 	}
 }
 
-void ModelComponent::Update(float ElapsedSeconds)
+void ModelComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
-	__super::Update(ElapsedSeconds);
+	__super::Update(ElapsedSeconds, pRH);
 
 	if (_SceneActor)
 	{
@@ -132,13 +132,14 @@ void ModelComponent::Draw(RenderHints* pRH)
 
 	if (DrawBoundingBox)
 	{
-		Vector3 pos{ (_BoundingBox.max.x + _BoundingBox.min.x) * 0.5f, 
+		_SceneActor->DrawBoundingBox(YELLOW);
+		/*Vector3 pos{(_BoundingBox.max.x + _BoundingBox.min.x) * 0.5f,
 			(_BoundingBox.max.y + _BoundingBox.min.y) * 0.5f, 
 			(_BoundingBox.max.z + _BoundingBox.min.z) * 0.5f };
 		Vector3 size{ (_BoundingBox.max.x - _BoundingBox.min.x) * _SceneActor->Scale.x,
 			(_BoundingBox.max.y - _BoundingBox.min.y) * _SceneActor->Scale.y,
 			(_BoundingBox.max.z - _BoundingBox.min.z) * _SceneActor->Scale.z };
-		DrawCubeWires(pos, size.x, size.y, size.z, GRAY);
+		DrawCubeWires(pos, size.x, size.y, size.z, GRAY);*/
 	}
 }
 
@@ -261,8 +262,7 @@ void ModelComponent::Load3DModel(const char* ModelPath,
 	_Color = Color;
 	if (_Model.meshCount > 0)
 	{
-		_BoundingBox = GetMeshBoundingBox(_Model.meshes[0]);
-
+		UpdateMeshBoundingBoxes();
 		RecalculateSmoothNormals(_Model);
 	}
 }
@@ -350,7 +350,7 @@ int ModelComponent::GetAnimationIndex()
 
 BoundingBox ModelComponent::GetBoundingBox()
 {
-	return _BoundingBox;
+	return LocalBoundingBox;
 }
 
 int ModelComponent::GetNextFrame(float InterpolationTime, int Channel)
@@ -386,6 +386,13 @@ void ModelComponent::UpdateModelAnimationWithInterpolation(float ElapsedSeconds)
 	}
 }
 
+/// <summary>
+/// InterpolateAnimation - Interpolate the current animation, or 
+///     interpolate between two animations during transition
+///     also update the animated mesh vertices and normals, and bounding boxes
+/// </summary>
+/// <param name="ChannelCount">single animation or transition to another animation</param>
+/// <remarks>ChannelCount is either 1 or 2. For bone-animation, bounding box is calculated here.</remarks>
 void ModelComponent::InterpolateAnimation(int ChannelCount)
 {
 	float t;
@@ -398,6 +405,16 @@ void ModelComponent::InterpolateAnimation(int ChannelCount)
 		if (anim.frameCount <= 0 || anim.bones == nullptr || anim.framePoses == nullptr)
 		{
 			return;
+		}
+	}
+
+	//Make sure mesh bounding boxes are available
+	if (_MeshBoundingBoxes.size() != _Model.meshCount)
+	{
+		_MeshBoundingBoxes.clear();
+		for (int i = 0; i < _Model.meshCount; i++)
+		{
+			_MeshBoundingBoxes.push_back(BoundingBox{ Vector3{FLT_MAX,FLT_MAX,FLT_MAX }, Vector3{FLT_MIN,FLT_MIN,FLT_MIN }});
 		}
 	}
 
@@ -532,6 +549,53 @@ void ModelComponent::InterpolateAnimation(int ChannelCount)
 					mesh.animNormals[vCounter + 2] += animNormal.z * boneWeight;
 				}
 			}
+
+			float vx = mesh.animVertices[vCounter];
+			float vy = mesh.animVertices[vCounter + 1];
+			float vz = mesh.animVertices[vCounter + 2];
+
+			// Update mesh bounding box
+			if (_MeshBoundingBoxes[m].min.x > vx)
+				_MeshBoundingBoxes[m].min.x = vx;
+			if (_MeshBoundingBoxes[m].min.y > vy)
+				_MeshBoundingBoxes[m].min.y = vy;
+			if (_MeshBoundingBoxes[m].min.z > vz)
+				_MeshBoundingBoxes[m].min.z = vz;
+
+			if (_MeshBoundingBoxes[m].max.x < vx)
+				_MeshBoundingBoxes[m].max.x = vx;
+			if (_MeshBoundingBoxes[m].max.y < vy)
+				_MeshBoundingBoxes[m].max.y = vy;
+			if (_MeshBoundingBoxes[m].max.z < vz)
+				_MeshBoundingBoxes[m].max.z = vz;
+
+			// Update local bounding box
+			if (LocalBoundingBox.min.x > vx)
+				LocalBoundingBox.min.x = vx;
+			if (LocalBoundingBox.min.y > vy)
+				LocalBoundingBox.min.y = vy;
+			if (LocalBoundingBox.min.z > vz)
+				LocalBoundingBox.min.z = vz;
+
+			if (LocalBoundingBox.max.x < vx)
+				LocalBoundingBox.max.x = vx;
+			if (LocalBoundingBox.max.y < vy)
+				LocalBoundingBox.max.y = vy;
+			if (LocalBoundingBox.max.z < vz)
+				LocalBoundingBox.max.z = vz;
+
+			// Normals processing
+			// NOTE: We use meshes.baseNormals (default normal) to calculate meshes.normals (animated normals)
+			if (mesh.normals != NULL)
+			{
+				animNormal.x = mesh.normals[vCounter];
+				animNormal.y = mesh.normals[vCounter + 1];
+				animNormal.z = mesh.normals[vCounter + 2];
+				animNormal = Vector3RotateByQuaternion(animNormal, QuaternionMultiply(outRotation, QuaternionInvert(inRotation)));
+				mesh.animNormals[vCounter] += animNormal.x * boneWeight;
+				mesh.animNormals[vCounter + 1] += animNormal.y * boneWeight;
+				mesh.animNormals[vCounter + 2] += animNormal.z * boneWeight;
+			}
 		}
 
 		// Upload new vertex data to GPU for model drawing (Only update data when values changed)
@@ -540,6 +604,44 @@ void ModelComponent::InterpolateAnimation(int ChannelCount)
 			int size = mesh.vertexCount * 3 * sizeof(float);
 			rlUpdateVertexBuffer(mesh.vboId[0], mesh.animVertices, size, 0); // Update vertex position
 			rlUpdateVertexBuffer(mesh.vboId[2], mesh.animNormals, size, 0);  // Update vertex normals
+		}
+	}
+}
+
+/// <summary>
+/// UpdateMeshBoundingBoxes - update the bounding boxes for each mesh 
+///    and the local bounding box for the whole model
+/// </summary>
+/// <remarks>This is used for non-bone animated models</remarks>
+void ModelComponent::UpdateMeshBoundingBoxes()
+{
+	//Calculate separate bounding box for each mesh
+	if (_MeshBoundingBoxes.size() != _Model.meshCount)
+	{
+		_MeshBoundingBoxes.clear();
+		for (int i = 0; i < _Model.meshCount; i++)
+		{
+			_MeshBoundingBoxes.push_back(GetMeshBoundingBox(_Model.meshes[i]));
+		}
+	}
+
+	//Calculate the local bounding box for the whole model
+	if (_MeshBoundingBoxes.size() > 0) {
+		LocalBoundingBox = _MeshBoundingBoxes[0];
+		for(int i = 1; i < _MeshBoundingBoxes.size(); i++)
+		{
+			if (LocalBoundingBox.min.x > _MeshBoundingBoxes[i].min.x)
+				LocalBoundingBox.min.x = _MeshBoundingBoxes[i].min.x;
+			if (LocalBoundingBox.min.y > _MeshBoundingBoxes[i].min.y)
+				LocalBoundingBox.min.y = _MeshBoundingBoxes[i].min.y;
+			if (LocalBoundingBox.min.z > _MeshBoundingBoxes[i].min.z)
+				LocalBoundingBox.min.z = _MeshBoundingBoxes[i].min.z;
+			if (LocalBoundingBox.max.x < _MeshBoundingBoxes[i].max.x)
+				LocalBoundingBox.max.x = _MeshBoundingBoxes[i].max.x;
+			if (LocalBoundingBox.max.y < _MeshBoundingBoxes[i].max.y)
+				LocalBoundingBox.max.y = _MeshBoundingBoxes[i].max.y;
+			if (LocalBoundingBox.max.z < _MeshBoundingBoxes[i].max.z)
+				LocalBoundingBox.max.z = _MeshBoundingBoxes[i].max.z;
 		}
 	}
 }

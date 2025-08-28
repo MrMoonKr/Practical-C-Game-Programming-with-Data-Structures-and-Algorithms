@@ -1,3 +1,4 @@
+//Implementation of shadow map render pass for rendering scene with shadows
 #include "Knight.h"
 
 #include "rlgl.h"
@@ -21,6 +22,7 @@ bool ShadowMapRenderPass::Create(Scene *sc)
 	ambientLoc = GetShaderLocation(shadowShader, "ambient");
 	lightVPLoc = GetShaderLocation(shadowShader, "lightVP");
 	shadowMapLoc = GetShaderLocation(shadowShader, "shadowMap");
+	receiveShadowLoc = GetShaderLocation(shadowShader, "receiveShadow");
 
 	Hints.pOverrideShader = &shadowShader;
 
@@ -73,6 +75,9 @@ bool ShadowMapRenderPass::OnAddToRender(Component* pSC, SceneObject* pSO)
 
 void ShadowMapRenderPass::BeginScene(SceneCamera* pOverrideCamera)
 {
+	NumComponentsSkipped = 0;
+	pScene->_CurrentRenderPass = this;
+
 	pLight->lightViewProj = MatrixMultiply(pLight->lightView, pLight->lightProj);
 	SetShaderValueMatrix(shadowShader, lightVPLoc, pLight->lightViewProj);
 
@@ -82,7 +87,6 @@ void ShadowMapRenderPass::BeginScene(SceneCamera* pOverrideCamera)
 	rlEnableTexture(depthTextureId);
 	rlSetUniform(shadowMapLoc, &slot, SHADER_UNIFORM_INT, 1);
 
-	pScene->_CurrentRenderPass = this;
 	pActiveCamera = pScene->GetMainCameraActor();
 	if (pOverrideCamera != nullptr)
 		pActiveCamera = pOverrideCamera;
@@ -108,6 +112,8 @@ void ShadowMapRenderPass::Render()
 	//render background first
 	vector<RenderContext>::iterator bk = pScene->_RenderQueue.Background.begin();
 	while (bk != pScene->_RenderQueue.Background.end()) {
+		int receiveShadow = bk->pComponent->receiveShadow ? 1 : 0;
+		SetShaderValue(shadowShader, receiveShadowLoc, &receiveShadow, SHADER_UNIFORM_INT);
 		bk->pComponent->Draw(&Hints);
 		++bk;
 	}
@@ -115,6 +121,8 @@ void ShadowMapRenderPass::Render()
 	//render opauqe geometry from nearest to farest
 	multiset<RenderContext, CompareDistanceAscending>::iterator opaque = pScene->_RenderQueue.Geometry.begin();
 	while (opaque != pScene->_RenderQueue.Geometry.end()) {
+		int receiveShadow = opaque->pComponent->receiveShadow ? 1 : 0;
+		SetShaderValue(shadowShader, receiveShadowLoc, &receiveShadow, SHADER_UNIFORM_INT);
 		opaque->pComponent->Draw(&Hints);
 		++opaque;
 	}
@@ -125,6 +133,8 @@ void ShadowMapRenderPass::Render()
 		rlDisableDepthMask();
 		rlDisableBackfaceCulling();
 		BeginBlendMode(alpha->pComponent->blendingMode);
+		int receiveShadow = alpha->pComponent->receiveShadow ? 1 : 0;
+		SetShaderValue(shadowShader, receiveShadowLoc, &receiveShadow, SHADER_UNIFORM_INT);
 		alpha->pComponent->Draw(&Hints);
 		EndBlendMode();
 		rlEnableDepthMask();
@@ -135,6 +145,8 @@ void ShadowMapRenderPass::Render()
 	//render overlay first
 	vector<RenderContext>::iterator overlay = pScene->_RenderQueue.Overlay.begin();
 	while (overlay != pScene->_RenderQueue.Overlay.end()) {
+		int receiveShadow = overlay->pComponent->receiveShadow ? 1 : 0;
+		SetShaderValue(shadowShader, receiveShadowLoc, &receiveShadow, SHADER_UNIFORM_INT);
 		overlay->pComponent->Draw(&Hints);
 		++overlay;
 	}	

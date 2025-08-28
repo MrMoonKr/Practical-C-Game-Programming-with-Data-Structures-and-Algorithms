@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <config.h>
+#include <algorithm> // Required for std::min and std::max
 
 extern Rectangle& CenterRectangle(Rectangle& r, int width, int height)
 {
@@ -387,6 +388,73 @@ PointInTriangleResult DetectPointInTriangleAndCalcY(
     result.isInTriangle = true;
 
     return result;
+}
+
+// Helper: compare two Vector3 with tolerance (floating point safety)
+bool Vector3AlmostEquals(const Vector3& a, const Vector3& b, float epsilon = 1e-6f) 
+{
+    return (fabs(a.x - b.x) < epsilon) &&
+        (fabs(a.y - b.y) < epsilon) &&
+        (fabs(a.z - b.z) < epsilon);
+}
+
+// Compare two Camera3D settings
+bool Camera3DEquals(const Camera3D& a, const Camera3D& b, float epsilon) 
+{
+    return Vector3AlmostEquals(a.position, b.position, epsilon) &&
+        Vector3AlmostEquals(a.target, b.target, epsilon) &&
+        Vector3AlmostEquals(a.up, b.up, epsilon) &&
+        fabs(a.fovy - b.fovy) < epsilon &&
+        a.projection == b.projection;
+}
+
+BoundingBox GetBoundingBoxUnion(BoundingBox box1, BoundingBox box2) 
+{
+    BoundingBox result = { 0 };
+
+    result.min.x = std::min(box1.min.x, box2.min.x);
+    result.min.y = std::min(box1.min.y, box2.min.y);
+    result.min.z = std::min(box1.min.z, box2.min.z);
+
+    result.max.x = std::max(box1.max.x, box2.max.x);
+    result.max.y = std::max(box1.max.y, box2.max.y);
+    result.max.z = std::max(box1.max.z, box2.max.z);
+
+    return result;
+}
+
+/// <summary>
+/// PointToBoxDistanceSqr - calculate minimum squared distance between point and BoundingBox
+/// </summary>
+/// <param name="p">Vector3 point in the coordinate space</param>
+/// <param name="box">BoundingBox in the same coordinate space</param>
+/// <returns>The square of nearest distance from point to the BoundingBox</returns>
+extern float PointToBoxDistanceSqr(Vector3 p, BoundingBox box)
+{
+    float dx = 0.0f;
+    if (p.x < box.min.x) dx = box.min.x - p.x;
+    else if (p.x > box.max.x) dx = p.x - box.max.x;
+
+    float dy = 0.0f;
+    if (p.y < box.min.y) dy = box.min.y - p.y;
+    else if (p.y > box.max.y) dy = p.y - box.max.y;
+
+    float dz = 0.0f;
+    if (p.z < box.min.z) dz = box.min.z - p.z;
+    else if (p.z > box.max.z) dz = p.z - box.max.z;
+
+    return dx * dx + dy * dy + dz * dz;
+}
+
+/// <summary>
+/// ValidBoundingBox - determine if a BoundingBox is valid (min < max on z axes)
+/// </summary>
+/// <param name="box">BoundingBox</param>
+/// <returns>true if the BoundingBox is valid</returns>
+extern bool IsBoundingBoxValid(BoundingBox box)
+{
+	if (box.min.z >= box.max.z) return false;
+    return true;
 }
 
 //end of Utils.cpp

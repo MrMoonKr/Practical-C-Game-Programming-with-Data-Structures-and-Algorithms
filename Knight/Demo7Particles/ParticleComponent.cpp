@@ -14,21 +14,23 @@ bool ParticleComponent::CreateFromFile(const char* path, int maxp, Vector3 v, Co
     initialColor = ic;
     initialSpeed = isp;
     particles.reserve(maxParticles);
+
+    return true;
 }
 
-void ParticleComponent::Update(float deltaTime)
+void ParticleComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
     for (auto& particle : particles) {
         // Update particle position based on velocity
-        particle.position.x += particle.velocity.x * deltaTime;
-        particle.position.y += particle.velocity.y * deltaTime;
-        particle.position.z += particle.velocity.z * deltaTime;
+        particle.position.x += particle.velocity.x * ElapsedSeconds;
+        particle.position.y += particle.velocity.y * ElapsedSeconds;
+        particle.position.z += particle.velocity.z * ElapsedSeconds;
 
         // Apply gravity
-        particle.velocity.y -= 9.8f * deltaTime;
+        particle.velocity.y -= 9.8f * ElapsedSeconds;
 
         // Decrease particle life
-        particle.life -= deltaTime;
+        particle.life -= ElapsedSeconds;
         float lifeRatio = particle.life / particle.maxLife;
 
         // Fade out as life decreases
@@ -41,7 +43,7 @@ void ParticleComponent::Update(float deltaTime)
         particles.end());
 
     // Emit new particles
-    EmitParticles(deltaTime);
+    EmitParticles(ElapsedSeconds);
 }
 
 void ParticleComponent::Draw(RenderHints* pRH)

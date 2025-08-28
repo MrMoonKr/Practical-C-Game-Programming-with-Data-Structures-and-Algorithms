@@ -16,17 +16,19 @@ bool DepthRenderPass::Create(Scene* sc)
 	depthShader = LoadShader(NULL, "../../resources/shaders/glsl330/shadow_depth.fs");
 
 	Hints.pOverrideShader = &depthShader;
+	Hints.pOverrideCamera = pLight;
 
-	shadowMap = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
+	shadowMap = LoadShadowmapRenderTexture(1024, 1024);
 
 	// For the shadowmapping algorithm, we will be rendering everything from the light's point of view
-	lightCam.position = Vector3Scale(pLight->lightDir, -45.0f);
-	lightCam.target = Vector3Zero();
+	Camera3D *lightCam = pLight->GetCamera3D();
+	lightCam->position = Vector3Scale(pLight->lightDir, -100.0f);
+	lightCam->target = Vector3Zero();
 
 	// Use an orthographic projection for directional lights
-	lightCam.projection = CAMERA_ORTHOGRAPHIC;
-	lightCam.up = Vector3{ 0.0f, 1.0f, 0.0f };
-	lightCam.fovy = 20.0f;
+	lightCam->projection = CAMERA_ORTHOGRAPHIC;
+	lightCam->fovy = 20.0f;
+	lightCam->up = Vector3{ 0.0f, 1.0f, 0.0f };
 
 	return true;
 }
@@ -40,7 +42,10 @@ void DepthRenderPass::Release()
 void DepthRenderPass::BeginScene(SceneCamera* pOverrideCamera)
 {
 	pScene->_CurrentRenderPass = this;
-	pActiveCamera = pScene->GetMainCameraActor();
+	if (Hints.pOverrideCamera != nullptr)
+		pActiveCamera = Hints.pOverrideCamera;
+	else
+		pActiveCamera = pScene->GetMainCameraActor();
 	if (pOverrideCamera != nullptr)
 		pActiveCamera = pOverrideCamera;
 	pScene->ClearRenderQueue();
@@ -65,7 +70,7 @@ bool DepthRenderPass::OnAddToRender(Component* pSC, SceneObject* pSO)
 	return __super::OnAddToRender(pSC, pSO);
 }
 
-void DepthRenderPass::BeginShadowMap(Scene* sc, SceneCamera* pOverrideCamera)
+void DepthRenderPass::BeginShadowMap()
 {
 	// First, render all objects into the shadowmap
 	// The idea is, we record all the objects' depths (as rendered from the light source's point of view) in a buffer
@@ -74,7 +79,7 @@ void DepthRenderPass::BeginShadowMap(Scene* sc, SceneCamera* pOverrideCamera)
 	// to determine whether a given point is "visible" to the light
 	BeginTextureMode(shadowMap);
 	ClearBackground(WHITE);
-	BeginMode3D(lightCam);
+	BeginMode3D(*pLight->GetCamera3D());
 	pLight->lightView = rlGetMatrixModelview();
 	pLight->lightProj = rlGetMatrixProjection();
 }

@@ -16,7 +16,7 @@ public:
 	SphereComponent();
 	~SphereComponent();
 
-	void Update(float ElapsedSeconds) override;
+	void Update(float ElapsedSeconds, RenderHints* pRH = nullptr) override;
 	void Draw(RenderHints* pRH = nullptr) override;
 
 	void SetColor(Color Color);

@@ -214,7 +214,7 @@ void Knight::DrawFPS(int x, int y)
 {
 	char text[32];
 	sprintf_s(text, "FPS: %i", GetFPS());
-	DrawTextEx(_Font, text, Vector2{ (float)x, (float)y }, 40, 3, WHITE);
+	DrawTextEx(_Font, text, Vector2{ (float)x, (float)y }, 40, 3, ORANGE);
 }
 
 void Knight::DrawText(const char* text, int x, int y, int size, const Color& color)

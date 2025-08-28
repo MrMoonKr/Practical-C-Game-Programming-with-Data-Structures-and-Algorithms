@@ -12,9 +12,7 @@ class BillboardComponent : public Component
 public:
 
 	BillboardComponent();
-	~BillboardComponent();
 
-	void Update(float ElapsedSeconds) override;
 	void Draw(RenderHints *pRH = nullptr) override;
 
 	Texture2D texture = { 0 };

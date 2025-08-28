@@ -40,13 +40,17 @@ class SceneRenderPass
 		int shinenessLoc = -1;
 		int alphaTestLoc = -1;
 
+		SceneCamera* pActiveCamera = nullptr;
+
+		int NumComponentsSkipped = 0;
+
 	protected:
 
 		Scene* pScene = nullptr;
-		SceneCamera* pActiveCamera = nullptr;
+
 
 		//Get uniform location for scene light data
-		virtual void InitLightUniforms(Shader &);
+		virtual void InitLightUniforms(const Shader &);
 		virtual void UpdateLightData(const Shader&);
 
 		virtual void EnableAlphaTest(bool enable)
@@ -58,3 +62,5 @@ class SceneRenderPass
 			}
 		}
 };
+
+//End of SceneRenderPass.h

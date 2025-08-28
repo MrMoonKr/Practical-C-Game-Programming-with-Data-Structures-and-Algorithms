@@ -4,8 +4,6 @@
 
 #include "ShadowSceneLight.h"
 
-#define SHADOWMAP_RESOLUTION 1024
-
 class ShadowMapRenderPass : public ForwardRenderPass
 {
 	public:
@@ -21,7 +19,7 @@ class ShadowMapRenderPass : public ForwardRenderPass
 		bool OnAddToRender(Component* pSC, SceneObject* pSO) override;
 
 		int depthTextureId = -1;
-		int shadowMapResolution = SHADOWMAP_RESOLUTION;
+		int shadowMapResolution = 1024;
 
 		// Record the light matrices for future use!
 	

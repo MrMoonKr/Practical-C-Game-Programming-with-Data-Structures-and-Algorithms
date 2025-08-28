@@ -1,6 +1,8 @@
+//Bonus Game World Demo - Main header file.
+//Read the description in BonusGameWorld01.cpp for details.
 #pragma once
 
-#include "Knight.h"   //Engine includes
+#include "Knight.h"   
 
 #include "QuadTreeTerrainComponent.h"
 #include "SkyboxComponent.h"

@@ -4,8 +4,6 @@
 
 #include "ShadowSceneLight.h"
 
-#define SHADOWMAP_RESOLUTION 1024
-
 class DepthRenderPass : public ForwardRenderPass
 {
 public:
@@ -19,17 +17,15 @@ public:
 	void EndScene() override;
 	bool OnAddToRender(Component* pSC, SceneObject* pSO) override;
 
-	void BeginShadowMap(Scene* sc, SceneCamera* cam = NULL);
+	void BeginShadowMap();
 	void EndShadowMap();
 
 	RenderTexture2D shadowMap = { 0 };
-	int shadowMapResolution = SHADOWMAP_RESOLUTION;
+	int shadowMapResolution = 1024;
 
 	Shader depthShader = { 0 };
 
 	ShadowSceneLight* pLight = nullptr;
-
-	Camera3D lightCam = { 0 };
 
 protected:
 
