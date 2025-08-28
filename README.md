@@ -19,7 +19,21 @@ Zhenyu George Li, Charles Shih-I Yeh</p>
 </p>
 
 <details open> 
-  <summary><h2>Latest Major Update - New Game World Demo Project</summary>
+  <summary><h2>August 2025 Update - Improving the Game World Demo Project</summary>
+<p>
+  We have updated the Git repository with one more bonus demo project <b>BonusGameWorld02</b> for our readers. This demo optimizes the performance by:
+</p>    
+<ul>
+  <li>Using world space bounding boxes and the camera's view frustum to avoid rendering SceneActors not visible by the view camera effectively.</li>
+  <li>Distance-based level of detail - only render shadows for objects within a specified distance. Reduce the detail of faraway objects.</li>
+  <li>Using the bounding box to align the character on the terrain better.</li>
+  <li>Other minor bug fixes.</li>
+</ul>
+<p>Make sure to rebuild the whole project solution before running any demo project.</p>
+</details>
+
+<details open> 
+  <summary><h2>July 2025 Update - New Game World Demo Project</summary>
 <p>
   We have updated the Git repository with one more bonus demo project for our readers. The primary purpose is to demonstrate how we can combine the features we learned throughout the book:
 </p>    
