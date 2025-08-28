@@ -51,8 +51,6 @@ void BonusGameWorld01::Start()
 	//Initialize Knight Engine with a default scene and camera
 	__super::Start();
 
-	Config.ShowFPS = true;
-
 	//Create a follow-up camera
 	pMainCamera = _Scene->CreateSceneObject<FollowUpCamera>("Main Camera");	
 	pMainCamera->ShowCursor = true;
@@ -98,7 +96,7 @@ void BonusGameWorld01::Start()
 	pShadowMapRenderer = new ShadowMapRenderPass(sceneLight, pDepthRenderer->shadowMap.depth.id);
 	pShadowMapRenderer->Create(_Scene);
 
-	SetTargetFPS(30); // Set the target frame rate for the game loop
+	SetTargetFPS(60); // Set the target frame rate for the game loop
 }
 
 void BonusGameWorld01::EndGame()
@@ -109,8 +107,10 @@ void BonusGameWorld01::EndGame()
 
 void BonusGameWorld01::Update(float ElapsedSeconds)
 {
+	double t = GetTime();
+
 	// Calculate the displacement of the target
-	Vector3 oldTarget = pDepthRenderer->lightCam.target;
+	Vector3 oldTarget = pDepthRenderer->pLight->GetCamera3D()->target;
 
 	for(int i=0;i< _Entities.size(); i++)
 	{
@@ -121,7 +121,7 @@ void BonusGameWorld01::Update(float ElapsedSeconds)
 	SetShaderValue(pShadowMapRenderer->shadowShader, pShadowMapRenderer->shadowShader.locs[SHADER_LOC_VECTOR_VIEW], &cameraPos, SHADER_UNIFORM_VEC3);
 
 	sceneLight->lightDir = Vector3Normalize(sceneLight->lightDir);
-	pDepthRenderer->lightCam.position = Vector3Scale(sceneLight->lightDir, -50.0f);
+	pDepthRenderer->pLight->GetCamera3D()->position = Vector3Scale(sceneLight->lightDir, -50.0f);
 	SetShaderValue(pShadowMapRenderer->shadowShader, pShadowMapRenderer->lightDirLoc, &sceneLight->lightDir, SHADER_UNIFORM_VEC3);
 
 	//These are the controls for moving the light direction.
@@ -205,44 +205,49 @@ void BonusGameWorld01::Update(float ElapsedSeconds)
 	Vector3 targetDisplacement = Vector3Subtract(worldPos, oldTarget);
 	// Apply the exact same displacement to the camera's position
 	// This is the crucial step to keep the view direction constant!
-	pDepthRenderer->lightCam.position = Vector3Add(pDepthRenderer->lightCam.position, targetDisplacement);
+	pDepthRenderer->pLight->GetCamera3D()->position = Vector3Add(pDepthRenderer->pLight->GetCamera3D()->position, targetDisplacement);
 
 	pMainCamera->SetLookAtPosition(worldPos);
 	pMainCamera->Update(0.001f);   //late update to adjust the camera position and look-at direction
 
 	//change of sky light
 	sceneLight->lightColor = pMainCamera->GetComponent<SkyboxComponent>()->_SkyColor;
+
+	_FrameUpdateTime = (float)(GetTime() - t);
 }
 
 void BonusGameWorld01::DrawOffscreen()
 {
+	double t = GetTime();
+
 	//Render the scene to the shadow map texture. See Chapter 7 for details.
 	pDepthRenderer->BeginShadowMap(_Scene);
 	pDepthRenderer->BeginScene();
 	pDepthRenderer->Render();
 	pDepthRenderer->EndScene();
 	pDepthRenderer->EndShadowMap();
+
+	_OffscreenRenderTime = (float)(GetTime() - t);
 }
 
 void BonusGameWorld01::DrawFrame()
 {
+	double t = GetTime();
 	//Render the scene with PCF shadow mapping. See Chapter 7 for details.
 	pShadowMapRenderer->BeginScene();
 	pShadowMapRenderer->Render();
 	pShadowMapRenderer->EndScene();
+	_FrameRenderTime = (float)(GetTime() - t);
 }
 
 void BonusGameWorld01::DrawGUI()
 {
 	__super::DrawGUI();
-	//Draw the shadow map texture for debugging purpose.
-	//Rectangle sr = { 0,0,1023, 1023 };
-	//Rectangle dr = { 0,0,255, 255 };
-	//Vector2 pos = { SCREEN_WIDTH - 300, 300 };
-	//DrawTextureEx(pDepthRenderer->shadowMap.depth, pos, 0, 0.125f, RED);
 	QuadTreeTerrainComponent* pTerrainCmpt = _TerrainEntity->_Terrain;
-	DrawText(TextFormat("Terrain triangle count = %d", pTerrainCmpt->NumTriangles), 10, 160, 50, WHITE);
-	DrawText(TextFormat("LOD Factor: %.1f", pTerrainCmpt->LevelOfDetailDistance), 10, 220, 50, WHITE);
+	//DrawText(TextFormat("Terrain triangle count = %d D:%d S:%d %f %f %f", pTerrainCmpt->NumTriangles, 
+		//pDepthRenderer->NumComponentsSkipped, pShadowMapRenderer->NumComponentsSkipped,
+		//_FrameUpdateTime * 1000, _OffscreenRenderTime * 1000, _FrameRenderTime * 1000), 10, 160, 50, WHITE);
+	//DrawText(TextFormat("LOD Factor: %.1f", pTerrainCmpt->LevelOfDetailDistance), 10, 220, 50, WHITE);
 }
 
 void BonusGameWorld01::OnCreateDefaultResources()
@@ -252,6 +257,7 @@ void BonusGameWorld01::OnCreateDefaultResources()
 	UnloadFont(_Font);
 	_Font = LoadFontEx("../../resources/fonts/sparky.ttf", 32, 0, 0);
 
+	Config.ShowFPS = true; //Enable FPS display.
 	Config.EnableDefaultLight = false; //Disable default light. 	
 	Config.EnableDefaultRenderPasses = false; //Disable default render passes, we will use ours.
 }

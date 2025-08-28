@@ -2,19 +2,20 @@
 
 #include "rlgl.h"
 
-#include "SceneActor.h"
+#include "OrthogonalCamera.h"
 
 typedef enum {
 	DIRECTIONAL_LIGHT = 0, // Directional light (infinite distance)
 	POINT_LIGHT,           // Point light (omnidirectional)
 } SceneLightType;
 
-class ShadowSceneLight : public SceneActor
+class ShadowSceneLight : public OrthogonalCamera
 {
 	public:
 		ShadowSceneLight(Scene* Scene, const char* Name = nullptr);
 
 		bool Update(float ElapsedSeconds) override;
+
 		virtual void SetLight(Vector3 dir, Color col);
 
 		// Record the light matrices for future use!

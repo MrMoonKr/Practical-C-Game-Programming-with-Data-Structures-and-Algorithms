@@ -17,7 +17,7 @@ class ParticleComponent : public Component
 {
     public:
         bool CreateFromFile(const char* path, int maxp, Vector3 v, Color ic = WHITE, Vector3 isp = {0,0,0});
-        void Update(float deltaTime) override;
+        void Update(float ElapsedSeconds, RenderHints* pRH = nullptr) override;
         void Draw(RenderHints* pRH = nullptr) override;
 
     private:

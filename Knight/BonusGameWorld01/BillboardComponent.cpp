@@ -1,3 +1,4 @@
+//Same BillboardComponent as in Demo7Billboard project
 #include "Knight.h"
 
 #include "BillboardComponent.h"
@@ -10,10 +11,6 @@ BillboardComponent::BillboardComponent()
 	EnableAlphaTest = true;
 }
 
-void BillboardComponent::Update(float ElapsedSeconds)
-{	
-}
-
 void BillboardComponent::Draw(RenderHints* pRH)
 {
 	Vector3 billUp = { 0, 1, 0 };
@@ -21,7 +18,7 @@ void BillboardComponent::Draw(RenderHints* pRH)
 	SceneCamera* pSC = this->_SceneActor->GetMainCamera();
 	Camera3D* pCam = pSC->GetCamera3D();
 	if (pRH != nullptr && pRH->pOverrideCamera)
-		pCam = pRH->pOverrideCamera;
+		pCam = pRH->pOverrideCamera->GetCamera3D();
 
 	if (pSC != nullptr) {
 
@@ -40,10 +37,6 @@ void BillboardComponent::Draw(RenderHints* pRH)
 			DrawBillboardPro(*pCam, texture, source, this->_SceneActor->Position, billUp, size, origin, 0, tint);
 		EndBlendMode();
 	}
-}
-
-BillboardComponent::~BillboardComponent()
-{
 }
 
 //end of BillboardComponent.cpp

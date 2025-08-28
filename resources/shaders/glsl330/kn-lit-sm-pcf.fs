@@ -31,6 +31,7 @@ uniform sampler2D shadowMap;
 
 uniform int shadowMapResolution;
 
+uniform int receiveShadow;
 
 void main()
 {
@@ -56,6 +57,12 @@ void main()
     specular += specCo;
 
     finalColor = (texelColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+
+    //If this object does not receive shadows, skip shadow calculations
+    if (receiveShadow == 0)
+    {
+        return;
+    }
 
     // Shadow calculations
     vec4 fragPosLightSpace = lightVP * vec4(fragPosition, 1);

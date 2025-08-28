@@ -106,7 +106,7 @@ void SmoothColorBlendingDemo::Draw2D()
         nextIdx = 0;
     Color c2 = dayToNightCycle[nextIdx];
 
-    float t = timeDiff / 0.5f;
+    float t = timeDiff;
 
     Color c = WHITE;
     c.r = (unsigned char)((1 - t)* c1.r + t * c2.r);

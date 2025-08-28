@@ -66,7 +66,7 @@ bool QuadTreeTerrainComponent::CreateFromFile(Vector3 terrainDimension, Vector2 
 	return true;
 }
 
-void QuadTreeTerrainComponent::Update(float ElapsedSeconds)
+void QuadTreeTerrainComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
 	__super::Update(ElapsedSeconds); // Call base class update  
 

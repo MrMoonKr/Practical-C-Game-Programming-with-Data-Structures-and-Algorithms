@@ -2,12 +2,20 @@
 
 #include "raylib.h"
 
+class SceneCamera;
+
 typedef struct _RenderHints {
+
+	// RenderPass 
 
 	// If not null, this shader will be used to render this component
 	Shader* pOverrideShader = nullptr;  
 
-	Camera3D* pOverrideCamera = nullptr; // If not null, this camera will be used to render this component
+	// If not null, this camera will be used to render this component
+	SceneCamera* pOverrideCamera = nullptr; 
+
+	// Define the LoD level, value of zero if not used.
+	unsigned levelOfDetail = 0;
 
 } RenderHints;
 
@@ -44,6 +52,11 @@ public:
 	/// </summary>
 	BlendMode blendingMode = (BlendMode) - 1;
 
+	/// <summary>
+	/// LocalBoundingBox - the world space bounding box of this component, used for frustum culling
+	/// </summary>
+	BoundingBox LocalBoundingBox; //in local space
+
 	enum eRenderQueueType
 	{
 		Background = 1,
@@ -63,14 +76,13 @@ public:
 		, _SceneObject(nullptr)
 		, _SceneActor(nullptr)
 	{ 
+		LocalBoundingBox = { 0 };
 	}
 	virtual ~Component() {};
 	eComponentType Type;
 
-	virtual void Update(float ElapsedSeconds) {}
-	virtual void Draw(RenderHints *pRH = nullptr) { }
-
-	//virtual void SetShader(Shader* pNewShader, int idx) {};
+	virtual void Update(float ElapsedSeconds, RenderHints* pRH = nullptr) {}
+	virtual void Draw(RenderHints *pRH = nullptr) {}
 
 protected:
 	friend class SceneObject;

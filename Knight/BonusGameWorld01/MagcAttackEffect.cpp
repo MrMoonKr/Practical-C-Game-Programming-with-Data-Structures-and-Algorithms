@@ -7,22 +7,21 @@ MagicAttackEffect::MagicAttackEffect()
     EnableAlphaTest = false;
 }
 
-void MagicAttackEffect::Update(float deltaTime)
+void MagicAttackEffect::Update(float ElapsedSeconds, RenderHints* pRH)
 {  
     if (currentDelayTime > 0.0f) {
-        currentDelayTime -= deltaTime;
-        printf("delayed rest = %f!\n", currentDelayTime);
+        currentDelayTime -= ElapsedSeconds;
         return; // Wait until delay is over
     }
 
     for (auto& particle : particles) {
         // Update particle position based on velocity
-        particle.position.x += particle.velocity.x * deltaTime;
-        particle.position.y += particle.velocity.y * deltaTime;
-        particle.position.z += particle.velocity.z * deltaTime;
+        particle.position.x += particle.velocity.x * ElapsedSeconds;
+        particle.position.y += particle.velocity.y * ElapsedSeconds;
+        particle.position.z += particle.velocity.z * ElapsedSeconds;
 
         // Decrease particle life
-        particle.life -= deltaTime;
+        particle.life -= ElapsedSeconds;
         float lifeRatio = particle.life / particle.maxLife;
 		float ageRatio = 1.0f - lifeRatio;
 
@@ -43,7 +42,7 @@ void MagicAttackEffect::Update(float deltaTime)
 
     // Emit new particles
     if (isEnabled) {
-        EmitParticles(deltaTime);
+        EmitParticles(ElapsedSeconds);
     }
 }
 

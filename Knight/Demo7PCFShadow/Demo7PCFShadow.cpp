@@ -19,7 +19,7 @@ void Demo7PCFShadow::Start()
 	pMainCamera->SetUp(Vector3{ 0,0,0 }, 60, 0, 60, 45, CAMERA_PERSPECTIVE);
 	
 	sceneLight = _Scene->CreateSceneObject<ShadowSceneLight>("Light");
-	sceneLight->SetLight(Vector3{ 0.1f, -0.4f, -1.0f }, WHITE);
+	sceneLight->SetLight(Vector3{ -25, -60, -30 }, WHITE);
 	
 	pFloor = _Scene->CreateSceneObject<SceneActor>("Terrain");
 	pFloor->Position = Vector3{ 0, -3, 0 };
@@ -122,14 +122,14 @@ void Demo7PCFShadow::Update(float ElapsedSeconds)
 	}
 
 	sceneLight->lightDir = Vector3Normalize(sceneLight->lightDir);
-	pDepthRenderer->lightCam.position = Vector3Scale(sceneLight->lightDir, -15.0f);
+	pDepthRenderer->pLight->GetCamera3D()->position = Vector3Scale(sceneLight->lightDir, -100.0f);
 	SetShaderValue(pShadowMapRenderer->shadowShader, pShadowMapRenderer->lightDirLoc, &sceneLight->lightDir, SHADER_UNIFORM_VEC3);
 	__super::Update(ElapsedSeconds);  //allow update main camera
 }
 
 void Demo7PCFShadow::DrawOffscreen()
 {
-	pDepthRenderer->BeginShadowMap(_Scene);
+	pDepthRenderer->BeginShadowMap();
 	pDepthRenderer->BeginScene();
 	pDepthRenderer->Render();
 	pDepthRenderer->EndScene();

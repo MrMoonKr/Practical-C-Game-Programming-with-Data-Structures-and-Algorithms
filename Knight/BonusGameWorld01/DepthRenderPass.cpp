@@ -1,3 +1,4 @@
+//A render pass that renders the scene from the light's point of view to create a shadow map.
 #include "Knight.h"
 
 #include "raylib.h"
@@ -17,18 +18,19 @@ bool DepthRenderPass::Create(Scene* sc)
 	alphaTestLoc = GetShaderLocation(depthShader, "alphaTest");
 
 	Hints.pOverrideShader = &depthShader;
-	Hints.pOverrideCamera = &lightCam;
+	Hints.pOverrideCamera = pLight;
 
 	shadowMap = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
 
 	// For the shadowmapping algorithm, we will be rendering everything from the light's point of view
-	lightCam.position = Vector3Scale(pLight->lightDir, -50.0f);
-	lightCam.target = Vector3Zero();
+	Camera3D* lightCam = pLight->GetCamera3D();
+	lightCam->position = Vector3Scale(pLight->lightDir, -50.0f);
+	lightCam->target = Vector3Zero();
 
 	// Use an orthographic projection for directional lights
-	lightCam.projection = CAMERA_ORTHOGRAPHIC;
-	lightCam.up = Vector3{ 0.0f, 1.0f, 0.0f };
-	lightCam.fovy = 100.0f;  
+	lightCam->projection = CAMERA_ORTHOGRAPHIC;
+	lightCam->fovy = 100.0f;  
+	lightCam->up = Vector3{ 0.0f, 1.0f, 0.0f };
 
 	int alphaTestVal = 1;
 	SetShaderValue(depthShader, alphaTestLoc, &alphaTestVal, SHADER_UNIFORM_INT);
@@ -44,8 +46,12 @@ void DepthRenderPass::Release()
 
 void DepthRenderPass::BeginScene(SceneCamera* pOverrideCamera)
 {
+	NumComponentsSkipped = 0;
 	pScene->_CurrentRenderPass = this;
-	pActiveCamera = pScene->GetMainCameraActor();
+	if (Hints.pOverrideCamera != nullptr)
+		pActiveCamera = Hints.pOverrideCamera;
+	else
+		pActiveCamera = pScene->GetMainCameraActor();
 	if (pOverrideCamera != nullptr)
 		pActiveCamera = pOverrideCamera;
 	pScene->ClearRenderQueue();
@@ -127,7 +133,7 @@ void DepthRenderPass::BeginShadowMap(Scene* sc, SceneCamera* pOverrideCamera)
 	// to determine whether a given point is "visible" to the light
 	BeginTextureMode(shadowMap);
 	ClearBackground(WHITE);
-	BeginMode3D(lightCam);
+	BeginMode3D(*pLight->GetCamera3D());
 	pLight->lightView = rlGetMatrixModelview();
 	pLight->lightProj = rlGetMatrixProjection();
 }

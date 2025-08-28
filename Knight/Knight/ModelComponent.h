@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "raylib.h"
 
 #include "Component.h"
@@ -45,7 +47,7 @@ public:
 	ModelComponent();
 	~ModelComponent();
 
-	void Update(float ElapsedSeconds) override;
+	void Update(float ElapsedSeconds, RenderHints* pRH = nullptr) override;
 	void Draw(RenderHints *pRH = nullptr) override;
 
 	void Load3DModel(const char* ModelPath,	
@@ -121,7 +123,7 @@ protected:
 	int _AnimationIndex;
 	int _CurrentFrame[2] = { 0 };			//Current frame indices for the current and next animations
 
-	eAnimMode _AnimationMode = eAnimMode::Default;
+	eAnimMode _AnimationMode = eAnimMode::Linear_interpolation;
 	int _PrevFrame[2] = { 0 };				//Previous frame indices for the current and next animations
 	float _FrameDuration;			//Seconds from prev frame to current frame
 	float _InterpolationTime[2] = { 0 };	//Interpolation times for the current and next animations
@@ -133,10 +135,12 @@ protected:
 
 	Texture2D _Texture2DMaps[LOAD_FLAG_COUNT];
 	Color _Color;
-	
-	BoundingBox _BoundingBox;
 
+	std::vector<BoundingBox> _MeshBoundingBoxes;
+	
 	int GetNextFrame(float InterpolationTime = 0.0f, int Channel = 0);
 	void UpdateModelAnimationWithInterpolation(float ElapsedSeconds);
 	void InterpolateAnimation(int ChannelCount);
+
+	void UpdateMeshBoundingBoxes();
 };

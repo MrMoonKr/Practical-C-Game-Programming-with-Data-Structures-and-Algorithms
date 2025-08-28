@@ -18,9 +18,9 @@ SphereComponent::~SphereComponent()
 {
 }
 
-void SphereComponent::Update(float ElapsedSeconds)
+void SphereComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
-	__super::Update(ElapsedSeconds);
+	__super::Update(ElapsedSeconds, pRH);
 	if (Radius != _Radius || Rings != _Rings || Slices != _Slices)
 	{
 		_Radius = Radius;

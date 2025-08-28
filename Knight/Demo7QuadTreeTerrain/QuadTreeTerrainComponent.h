@@ -52,7 +52,7 @@ public:
 
     virtual bool CreateFromFile(Vector3 terrainDimension, Vector2 texTileSize, const char* pHightmapFilePath, const char* pTerrainTexurePath);
 
-	void Update(float ElapsedSeconds) override;
+	void Update(float ElapsedSeconds, RenderHints* pRH = nullptr) override;
 	void Draw(RenderHints *pRH = nullptr) override;
 
     float GetHeightmapValue(int x, int z);

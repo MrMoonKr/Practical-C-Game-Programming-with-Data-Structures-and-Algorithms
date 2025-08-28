@@ -18,9 +18,9 @@ ConeComponent::~ConeComponent()
 {
 }
 
-void ConeComponent::Update(float ElapsedSeconds)
+void ConeComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
-	__super::Update(ElapsedSeconds);
+	__super::Update(ElapsedSeconds, pRH);
 	if (Radius != _Radius || Height != _Height || Slices != _Slices)
 	{
 		_Radius = Radius;

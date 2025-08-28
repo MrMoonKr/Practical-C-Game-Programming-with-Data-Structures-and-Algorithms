@@ -30,9 +30,17 @@ public:
 	Quaternion GetWorldRotation();
 	Vector3 GetWorldScale();
 
-	void Translate(float x, float y, float z);
+	BoundingBox WorldBoundingBox; //in world space
+
+	void TranslateWS(float wx, float wy, float wz);
+
+	void UpdateCachedWorldBoundingBox();
 
 	inline SceneCamera* GetMainCamera() { return (_Scene != NULL) ? _Scene->GetMainCameraActor() : NULL; };
+
+	float SquareDistanceToCamera = 0.0f; //cached distance to the active camera, used for sorting in render queue
+
+	void DrawBoundingBox(Color = YELLOW);
 
 protected:
 

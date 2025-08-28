@@ -40,7 +40,14 @@ bool TerrainEntity::Create(Scene* pScene, Entity* pContainer)
 		BillboardComponent* billboard = imposter->CreateAndAddComponent<BillboardComponent>();
 
 		//initialize billbard
-		billboard->texture = (randomTerrainRange(gen) > 16.0f) ? treeImage : robotImage;
+		if (randomTerrainRange(gen) > 16.0f) {
+			billboard->texture = treeImage;
+			billboard->receiveShadow = false;
+		}
+		else {
+			billboard->texture = robotImage;
+			billboard->receiveShadow = true;
+		}
 		// Entire billboard texture, source is used to take a segment from a larger texture.
 		billboard->source = { 0.0f, 0.0f, (float)billboard->texture.width, (float)billboard->texture.height };
 		billboard->size = { randomSizeRange(gen), randomSizeRange(gen) };
@@ -49,7 +56,6 @@ bool TerrainEntity::Create(Scene* pScene, Entity* pContainer)
 		billboard->blendingMode = BLEND_ALPHA;
 		billboard->EnableAlphaTest = true;
 		billboard->castShadow = Component::eShadowCastingType::Shadow;
-		billboard->receiveShadow = true;
 
 		//adjust tree height based on terrain
 		imposter->Position.y = _Terrain->GetTerrainY(imposter->Position.x, imposter->Position.z) + billboard->size.y * 0.45f; // Set height based on terrain
@@ -147,7 +153,6 @@ void TerrainEntity::Update(float ElapsedSeconds)
 
 	float t = timeDiff;
 
-	pSkybox->_SkyColor = WHITE;
 	pSkybox->_SkyColor.r = (unsigned char)((1 - t) * c1.r + t * c2.r);
 	pSkybox->_SkyColor.g = (unsigned char)((1 - t) * c1.g + t * c2.g);
 	pSkybox->_SkyColor.b = (unsigned char)((1 - t) * c1.b + t * c2.b);

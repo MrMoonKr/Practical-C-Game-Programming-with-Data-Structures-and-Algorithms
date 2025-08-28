@@ -20,9 +20,9 @@ PlaneComponent::~PlaneComponent()
 {
 }
 
-void PlaneComponent::Update(float ElapsedSeconds)
+void PlaneComponent::Update(float ElapsedSeconds, RenderHints* pRH)
 {
-	__super::Update(ElapsedSeconds);
+	__super::Update(ElapsedSeconds, pRH);
 	if (Width != _Width || Height != _Height || Cols != _Cols || Rows != _Rows)
 	{
 		_Width = Width;

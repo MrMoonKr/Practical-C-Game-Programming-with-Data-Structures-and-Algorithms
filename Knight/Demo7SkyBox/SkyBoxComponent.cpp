@@ -41,11 +41,6 @@ bool SkyboxComponent::CreateFromFile(const char* pSkyboxTexFilePath, CubemapLayo
 	return true;
 }
 
-void SkyboxComponent::Update(float ElapsedSeconds)
-{
-	__super::Update(ElapsedSeconds);
-}
-
 void SkyboxComponent::Draw(RenderHints* pRH)
 {
 	//We are inside the cube, we need to disable backface culling!

@@ -1,5 +1,6 @@
 #include "SceneActor.h"
 #include "Scene.h"
+#include "KnightUtils.h"
 
 SceneActor::SceneActor(Scene* Scene, const char* Name)
 	: SceneObject(Scene, Name)
@@ -11,8 +12,8 @@ SceneActor::SceneActor(Scene* Scene, const char* Name)
 	, _MatScale(MatrixIdentity())
 	, _MatTransform(MatrixIdentity())
 	, _MatWorldTransform(MatrixIdentity())
+	, WorldBoundingBox(BoundingBox{ 0 })
 {
-
 }
 
 bool SceneActor::AddComponent(Component* Component)
@@ -53,6 +54,9 @@ bool SceneActor::Update(float ElapsedSeconds)
 			parent = parent->Parent;
 		}
 	}
+
+	UpdateCachedWorldBoundingBox();
+
 	return true;
 }
 
@@ -96,7 +100,15 @@ Vector3 SceneActor::GetWorldScale()
 	return Vector3{ _MatWorldTransform.m0, _MatWorldTransform.m5, _MatWorldTransform.m10 };
 }
 
-void SceneActor::Translate(float x, float y, float z)
+/// <summary>
+/// TranslateWS - handy function to move an actor to a specific world space position,
+///              taking into account any parent transforms updates.
+/// </summary>
+/// <param name="x">world space coordinate x</param>
+/// <param name="y">world space coordinate y</param>
+/// <param name="z">world space coordinate z</param>
+/// <remarks>A handy function to place a SceneActor in particular world space coordinate (x,y,z)</remarks>
+void SceneActor::TranslateWS(float x, float y, float z)
 {
 	Vector3 targetWorldPosition = { x, y, z };
 	Vector3 newLocalPosition = targetWorldPosition; // Start with the target world position
@@ -125,4 +137,73 @@ void SceneActor::Translate(float x, float y, float z)
 	Position = newLocalPosition;
 	// The _MatTranslation and _MatTransform will be recalculated in the next Update call.
 }
+
+void SceneActor::UpdateCachedWorldBoundingBox()
+{
+	BoundingBox localBox = { 0 };
+	map<Component::eComponentType, Component*>::iterator it = _Components.begin();
+	if (_Components.end() == it)
+	{
+		//this is a SceneActor without any component, so make CachedWorldBoundingBox an empty one
+		WorldBoundingBox = { 0 };
+		return;
+	} else 
+	{
+		localBox = it->second->LocalBoundingBox;
+	}
+
+	it++;
+
+	while(it != _Components.end())
+	{
+		Component* comp = it->second;
+		localBox = GetBoundingBoxUnion(localBox, comp->LocalBoundingBox);
+		it++;
+	}
+
+	// Define the 8 corners of the local bounding box
+	Vector3 corners[8] = {
+		{ localBox.min.x, localBox.min.y, localBox.min.z },
+		{ localBox.min.x, localBox.min.y, localBox.max.z },
+		{ localBox.min.x, localBox.max.y, localBox.min.z },
+		{ localBox.min.x, localBox.max.y, localBox.max.z },
+		{ localBox.max.x, localBox.min.y, localBox.min.z },
+		{ localBox.max.x, localBox.min.y, localBox.max.z },
+		{ localBox.max.x, localBox.max.y, localBox.min.z },
+		{ localBox.max.x, localBox.max.y, localBox.max.z }
+	};
+
+	// Transform all 8 corners into world space
+	Vector3 transformed[8];
+	for (int i = 0; i < 8; i++)
+	{
+		transformed[i] = Vector3Transform(corners[i], _MatWorldTransform);
+	}
+
+	// Compute new world bounding box
+	WorldBoundingBox.min = transformed[0];
+	WorldBoundingBox.max = transformed[0];
+	for (int i = 1; i < 8; i++)
+	{
+		WorldBoundingBox.min.x = fminf(WorldBoundingBox.min.x, transformed[i].x);
+		WorldBoundingBox.min.y = fminf(WorldBoundingBox.min.y, transformed[i].y);
+		WorldBoundingBox.min.z = fminf(WorldBoundingBox.min.z, transformed[i].z);
+
+		WorldBoundingBox.max.x = fmaxf(WorldBoundingBox.max.x, transformed[i].x);
+		WorldBoundingBox.max.y = fmaxf(WorldBoundingBox.max.y, transformed[i].y);
+		WorldBoundingBox.max.z = fmaxf(WorldBoundingBox.max.z, transformed[i].z);
+	}
+}
+
+void SceneActor::DrawBoundingBox(Color c)
+{
+	Vector3 pos{(WorldBoundingBox.max.x + WorldBoundingBox.min.x) * 0.5f,
+	(WorldBoundingBox.max.y + WorldBoundingBox.min.y) * 0.5f,
+	(WorldBoundingBox.max.z + WorldBoundingBox.min.z) * 0.5f };
+	Vector3 size{ (WorldBoundingBox.max.x - WorldBoundingBox.min.x),
+	(WorldBoundingBox.max.y - WorldBoundingBox.min.y),
+	(WorldBoundingBox.max.z - WorldBoundingBox.min.z)};
+	DrawCubeWires(pos, size.x, size.y, size.z, c);
+}
+
 

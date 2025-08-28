@@ -31,3 +31,13 @@ struct PointInTriangleResult {
 
 extern PointInTriangleResult DetectPointInTriangleAndCalcY(Vector3 v0, Vector3 v1, Vector3 v2,
 	Vector3 testPoint);
+
+extern bool __cdecl Camera3DEquals(const Camera3D& a, const Camera3D& b, float epsilon = 0.0001f);
+
+extern BoundingBox __cdecl GetBoundingBoxUnion(BoundingBox box1, BoundingBox box2);
+
+extern float PointToBoxDistanceSqr(Vector3 p, BoundingBox box);
+
+extern bool IsBoundingBoxValid(BoundingBox box);
+
+//End of KnightUtils.h

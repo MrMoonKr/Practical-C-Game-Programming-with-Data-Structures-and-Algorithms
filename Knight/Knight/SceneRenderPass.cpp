@@ -6,12 +6,20 @@
 #include "Knight.h"
 #include "SceneRenderPass.h"
 
+/// <summary>
+/// Create - Initialize the SceneRenderPass with a pointer to the Scene.
+/// </summary>
+/// <param name="sc"></param>
+/// <returns></returns>
 bool SceneRenderPass::Create(Scene* sc)
 {
 	pScene = sc;
 	return true;
 }
 
+/// <summary>
+/// Render - Render all Components in the render queue.
+/// </summary>
 void SceneRenderPass::Render()
 {
 	//render background first
@@ -70,9 +78,19 @@ bool SceneRenderPass::OnAddToRender(Component* pSC, SceneObject* pSO)
 
 	if (pActor != nullptr) 
 	{
-		Vector3 pos = pActor->Position;
-		if (pActiveCamera != nullptr)
-			dist2 = Vector3DistanceSqr(pos, pActiveCamera->GetPosition());
+		Vector3 pos = pActor->GetWorldPosition();
+		if (pActiveCamera != nullptr) 
+		{
+			//use bounding box distance if available, otherwise fallback to actor position distance
+			if (IsBoundingBoxValid(pActor->WorldBoundingBox)) {
+				dist2 = PointToBoxDistanceSqr(pActiveCamera->GetPosition(), pActor->WorldBoundingBox);
+			}
+			else {
+				//fallback to use actor position if bounding box is not valid
+				dist2 = Vector3DistanceSqr(pActor->GetWorldPosition(), pActiveCamera->GetPosition());
+			}
+			pActor->SquareDistanceToCamera = dist2; //cache the distance to camera for sorting
+		}
 	}
 
 	switch (pSC->renderQueue)
@@ -94,6 +112,10 @@ bool SceneRenderPass::OnAddToRender(Component* pSC, SceneObject* pSO)
 	return true;
 }
 
+/// <summary>
+/// BuildRenderQueue - recursively traverse the scene graph starting from pRoot, and add Components to the render queue
+/// </summary>
+/// <param name="pRoot">The current SceneObject</param>
 void SceneRenderPass::BuildRenderQueue(SceneObject* pRoot)
 {
 	if (pRoot == nullptr)
@@ -103,21 +125,45 @@ void SceneRenderPass::BuildRenderQueue(SceneObject* pRoot)
 		
 	if (pRoot->IsActive == false)
 		return;
-					
-	while (it != pRoot->_Components.end())
+
+	bool bAddComponents = true;
+
+	SceneActor* pActor = dynamic_cast<SceneActor*>(pRoot);
+	if (pActiveCamera != nullptr && pActor != nullptr)
 	{
-		if (it->second == nullptr)
-			continue;
-		OnAddToRender(it->second, pRoot);
-		++it;
+		if (!(pActor->WorldBoundingBox.min.z == pActor->WorldBoundingBox.max.z))
+		{
+			FrustumPlane frustumPlanes[6];
+			pActiveCamera->ExtractFrustumPlanes(frustumPlanes);
+			if (pActiveCamera->IsBoundingBoxInFrustum(pActor->WorldBoundingBox, frustumPlanes) == false) 
+			{
+				bAddComponents = false;
+				++NumComponentsSkipped;
+			}				
+		}
 	}
 
+	if (bAddComponents == true)
+	{
+		while (it != pRoot->_Components.end())
+		{
+			if (it->second == nullptr)
+				continue;
+			OnAddToRender(it->second, pRoot);
+			++it;
+		}
+	}
+					
 	for (int i = 0; i < pRoot->_Children.size(); i++)
 		BuildRenderQueue(pRoot->_Children[i]);
 
 }
 
-void SceneRenderPass::InitLightUniforms(Shader& shader)
+/// <summary>
+/// InitLightUniforms - initialize the shader uniform locations for the lights in the scene.
+/// </summary>
+/// <param name="shader">The shader to setup the lighting uniforms</param>
+void SceneRenderPass::InitLightUniforms(const Shader& shader)
 {
 	for (int i = 0; i < NUM_MAX_LIGHTS; i++)
 	{
@@ -132,6 +178,10 @@ void SceneRenderPass::InitLightUniforms(Shader& shader)
 	shinenessLoc = GetShaderLocation(shader, "materialShininess");
 }
 
+/// <summary>
+/// UpdateLightData - update the light data in the shader if any light is dirty (has changed since last update).
+/// </summary>
+/// <param name="shader"></param>
 void SceneRenderPass::UpdateLightData(const Shader& shader)
 {
 	for (int i = 0; i < NUM_MAX_LIGHTS; i++)
@@ -164,3 +214,5 @@ void SceneRenderPass::UpdateLightData(const Shader& shader)
 	// Update ambient light value
 	SetShaderValue(shader, ambientLoc, pScene->AmbientColor, SHADER_UNIFORM_VEC4);
 }
+
+//End of SceneRenderPass.cpp
