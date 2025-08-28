@@ -19,6 +19,18 @@ Zhenyu George Li, Charles Shih-I Yeh</p>
 </p>
 
 <details open> 
+  <summary><h2>User Contributed CMake build system support</summary>
+<p>
+  We would like to express our gratitude to <b><i>DonizeteVida</i></b> and <b><i>ramonmeza</i></b> for their efforts in enabling sample projects supporting the CMake build system for MacOS and Linux users.  
+ </p>    
+<ul>
+  <li>At this moment, if you want to use the CMake build system, please pull CMake-enabled sample codes from the <b>CMake</b> branch instead of the main branch.</li>
+  <li>Visual Studio community user, please continue pulling new updates from the main branch.</li>
+  <li>The two branches (CMake and main) will be consolidated into a single main branch in the near future, after some upcoming major updates.</li>
+</ul>
+</details>
+
+<details open> 
   <summary><h2>August 2025 Update - Improving the Game World Demo Project</summary>
 <p>
   We have updated the Git repository with one more bonus demo project <b>BonusGameWorld02</b> for our readers. This demo optimizes the performance by:
